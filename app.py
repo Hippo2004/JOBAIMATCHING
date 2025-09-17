@@ -13,21 +13,81 @@ from services.jobs import fetch_arbeitnow
 from services.db import get_supabase, ensure_candidate, log_interest
 
 # --- Page Config & Theme ---
-st.set_page_config(page_title="AI Talent Marketplace — Candidate", layout="wide")
+st.set_page_config(
+    page_title="AI Talent Marketplace — Candidate",
+    page_icon="✨",
+    layout="wide",
+)
 
+# ——— Polished UI CSS ———
 CUSTOM_CSS = """
 <style>
-:root { --radius: 14px; }
-.block-container { padding-top: 1.5rem; }
-.kpi { border-radius: var(--radius); padding: 0.75rem 1rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); }
-.job-card { border-radius: var(--radius); padding: 1rem; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); }
-.step { padding: 0.5rem 0.75rem; border-radius: 999px; margin-right: 0.5rem; font-weight: 600; opacity: 0.7; border: 1px solid rgba(255,255,255,0.12); }
-.step.active { opacity: 1; background: linear-gradient(90deg, rgba(0,150,255,0.25), rgba(114,137,218,0.25)); }
-.badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; border: 1px solid rgba(255,255,255,0.12); font-size: 0.8rem; opacity: 0.85; }
+:root { --radius: 16px; --ring: 1px solid rgba(255,255,255,0.06); }
+.block-container { padding-top: 1.25rem; max-width: 1200px; }
+header { visibility: hidden; } /* hide default header gap */
+
+/* Hero / top bar */
+.hero {
+  margin: 0 0 1rem 0; padding: 1rem 1.2rem;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(30,121,255,0.18), rgba(139,92,246,0.18));
+  border: var(--ring);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+}
+
+/* Stepper */
+.stepper { display:flex; gap:.5rem; margin-bottom: .75rem; position: sticky; top: 0; z-index: 10; }
+.step {
+  padding: .45rem .85rem; border-radius: 999px;
+  font-weight: 700; letter-spacing:.2px; opacity:.7; border: var(--ring);
+  background: #12141A;
+}
+.step.active { opacity:1; background: linear-gradient(90deg, rgba(30,121,255,.25), rgba(139,92,246,.25)); }
+
+/* Cards / containers */
+.card { border-radius: var(--radius); border: var(--ring); background:#131722; }
+.job-card { border-radius: var(--radius); border: var(--ring); background:#12161f; padding: 1rem; }
+
+/* Controls */
+.stButton>button, .stDownloadButton>button, .stLinkButton>a {
+  border-radius: 12px; font-weight: 700;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.25);
+}
+
+/* Upload box emphasis */
+[data-testid="stFileUploader"] {
+  border-radius: var(--radius);
+  border: var(--ring);
+  background: #10141c;
+}
+
+/* Footer */
+.footer { opacity:.7; font-size:.85rem; padding:1rem 0; }
+.footer a { color:#9cc0ff; text-decoration:none; }
+.footer a:hover { text-decoration:underline; }
+
+/* Minor text tweaks */
 .small { opacity: 0.75; font-size: 0.9rem; }
+.badge { display:inline-block; padding:.2rem .6rem; border-radius:999px; border: var(--ring); font-size:.8rem; opacity:.9; }
+
+/* Mobile */
+@media (max-width: 760px) { .block-container { padding-top: .5rem; } }
 </style>
 """
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+
+# Fancy top strip
+st.markdown(
+    """
+    <div class="hero">
+      <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:center;">
+        <div style="font-size:1.1rem;font-weight:800;">No feed, no spam, no friction — just high-signal matches.</div>
+        <div style="opacity:.8;">Privacy-first • Blind-mode optional • Explainable fit</div>
+      </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 load_dotenv()
 
@@ -46,16 +106,16 @@ def _init_state():
 _init_state()
 
 # --- Helpers ---
-STEPS = [
-    (1, "Upload"), (2, "Review & Fix"), (3, "Matches"), (4, "Interests")
-]
+STEPS = [(1, "Upload"), (2, "Review & Fix"), (3, "Matches"), (4, "Interests")]
 
 def stepper():
+    st.markdown('<div class="stepper">', unsafe_allow_html=True)
     cols = st.columns(len(STEPS))
     for i, (num, label) in enumerate(STEPS):
         with cols[i]:
             cls = "step active" if st.session_state.step == num else "step"
             st.markdown(f"<div class='{cls}'> {num}. {label} </div>", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 def microcopy():
     st.info("We never share your CV. You’ll review everything before matching.")
@@ -85,7 +145,6 @@ def step_upload():
                     st.error(f"PDF parsing failed: {e}")
                     return
             if len(text.strip()) < 500:
-                # try pdfminer fallback if pypdf too short
                 try:
                     alt = _pdfminer_extract(file)
                     if len(alt.strip()) > len(text.strip()):
@@ -102,15 +161,12 @@ def step_upload():
             except Exception:
                 file.seek(0)
                 df = pd.read_csv(file, sep=";")
-            text_col = None
-            for c in df.columns:
-                if c.lower() in {"text", "cv_text", "resume", "profile"}:
-                    text_col = c
-                    break
-            if text_col:
-                text = "\n\n".join(str(x) for x in df[text_col].fillna("").tolist())
-            else:
-                text = "\n\n".join([" ".join(str(v) for v in row if pd.notna(v)) for row in df.values])
+            text_col = next((c for c in df.columns if c.lower() in {"text", "cv_text", "resume", "profile"}), None)
+            text = (
+                "\n\n".join(str(x) for x in df[text_col].fillna("").tolist())
+                if text_col else
+                "\n\n".join([" ".join(str(v) for v in row if pd.notna(v)) for row in df.values])
+            )
             st.toast("CSV ingested", icon="📄")
 
         elif file.name.lower().endswith(".txt"):
@@ -120,7 +176,6 @@ def step_upload():
             except UnicodeDecodeError:
                 text = bytes_data.decode("latin-1", errors="ignore")
             st.toast("TXT ingested", icon="📄")
-
         else:
             st.error("Unsupported file type.")
             return
@@ -159,7 +214,6 @@ def step_review():
         return
 
     tab_struct, tab_raw = st.tabs(["Structured", "Raw text"])
-
     with tab_struct:
         _edit_structured(cand)
     with tab_raw:
@@ -377,6 +431,18 @@ elif st.session_state.step == 3:
     step_matches()
 else:
     step_interests()
+
+# Footer
+st.markdown(
+    """
+    <div class="footer">
+      <span>© {year} AI Talent Marketplace</span>
+      &nbsp;•&nbsp; <a href="#">Privacy</a> &nbsp;•&nbsp; <a href="#">Terms</a>
+    </div>
+    """.format(year=pd.Timestamp.today().year),
+    unsafe_allow_html=True,
+)
+
 
 # Footer note
 st.caption("No feed, no spam, no friction — just high-signal matches.")

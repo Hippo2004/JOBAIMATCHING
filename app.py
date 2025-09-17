@@ -1,5 +1,5 @@
 \
-    import io
+import io
 import os
 import uuid
 from typing import List, Dict, Any
@@ -12,7 +12,6 @@ from parsing.cv_parser import extract_cv_structured
 from matching.matcher import compute_matches, candidate_text
 from services.jobs import fetch_arbeitnow
 from services.db import get_supabase, ensure_candidate, log_interest
-
 
     # --- Page Config & Theme ---
     st.set_page_config(page_title="AI Talent Marketplace — Candidate", layout="wide")

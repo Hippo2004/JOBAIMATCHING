@@ -1,0 +1,44 @@
+{
+  "hard": [
+    "b2b sales",
+    "lead generation",
+    "cold emailing",
+    "digital marketing",
+    "data analysis",
+    "backend development",
+    "frontend development",
+    "statistics",
+    "nlp",
+    "machine learning"
+  ],
+  "tools": [
+    "Salesforce",
+    "Excel",
+    "PowerPoint",
+    "Word",
+    "LinkedIn Sales Navigator",
+    "Figma",
+    "Notion",
+    "Streamlit",
+    "Python",
+    "Pandas",
+    "scikit-learn",
+    "TensorFlow",
+    "PyTorch"
+  ],
+  "soft": [
+    "communication",
+    "leadership",
+    "project management",
+    "teamwork",
+    "problem solving",
+    "creativity"
+  ],
+  "languages": [
+    "French",
+    "English",
+    "Spanish",
+    "German",
+    "Italian"
+  ]
+}

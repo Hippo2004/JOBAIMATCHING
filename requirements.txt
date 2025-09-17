@@ -1,0 +1,10 @@
+streamlit==1.36.0
+pandas==2.2.2
+requests==2.32.3
+scikit-learn==1.5.1
+pypdf==4.2.0
+pdfminer.six==20231228
+rapidfuzz==3.9.6
+dateparser==1.2.0
+supabase==2.7.3
+python-dotenv==1.0.1
